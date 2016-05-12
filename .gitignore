@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# Don't ignore directories, so we can recurse into them
+!classes/
+!models/
+
+# Don't ignore .gitignore
+!.gitignore
+
+# Now exclude our type
+!*.py
+!*.md
