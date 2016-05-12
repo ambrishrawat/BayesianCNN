@@ -6,6 +6,8 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD, Adadelta, Adagrad
 from keras.utils import np_utils, generic_utils
+from keras.models import model_from_json
+from keras.objectives import categorical_crossentropy
 from six.moves import range
 import numpy as np
 import scipy as sp
@@ -16,6 +18,8 @@ class CNN:
 	CNN Class
 	'''
 	def __init__(self):
+		#TODO
+		#Initialise all the class members here (including numpy arrays?)
 		pass
 
 	def set_data(self):
@@ -73,6 +77,9 @@ class CNN:
 		self.model.add(Dropout(0.5))
 		self.model.add(Dense(self.nb_classes,name='dense_2'))
 		self.model.add(Activation('softmax'))
+
+		#intiliase a dictionary of layers
+		self.ldict = dict([(layer.name, layer) for layer in self.model.layers])
 		pass
 
 
@@ -96,26 +103,54 @@ class CNN:
 		open(save_path_key+'_arch.json', 'w').write(json_string)
 		self.model.save_weights(save_path_key+'_weights.h5')
 
-	def get_layer_dict(self):
-		'''
-		get the dictionary of layers
-		'''
-		layer_dict = dict([(layer.name, layer) for layer in model.layers])
-		return layer_dict
+	
 
 	def load_model(self):
 		'''
 		Load model architecture from a jason file and the corresponding weights from another file
 		'''
 	  	self.model = Sequential()
-		self.model = model_from_json(open('models/model_200_arch.json').read())
-		self.model.load_weights('models/model_200_weights.h5')
+		self.model = model_from_json(open('models/model_cifar_arch.json').read())
+		self.model.load_weights('models/model_cifar_weights.h5')
+
+	def save_img(self,index,path='Images/img'):
+		'''
+		Save an image at the specifed path
+		'''
+		img = np.array(self.X_train[index])
+		sp.misc.imsave(path+'_'+str(index)+'.jpg',img[0].T)
 
 	def classify_image(self,img):
 		'''
 		Given a trained network classify an image
-		'''		
+		'''	
 		pass
 
+	def gen_adversarial(self,index,dropout=True):
+		'''
+		Generate an adversarial example for the index index in cifar10
+		'''
+		labels = K.placeholder(shape=(None,self.nb_classes))
+
+		preds = self.ldict['dense_2'].get_output(train=dropout)
+		img_placeholder = self.model.get_input()
+ 
+		#loss function
+		loss = K.mean(categorical_crossentropy(labels,preds))
+
+		#gradient of loss with respect to input image
+		grads = K.gradients(loss,img_placeholder)
+		iterate = K.function([img_placeholder,labels], [loss, grads])
+
+
+		img_orig = [self.X_train[index][0]]
+		orig_label = self.Y_train[index][0]
+		img_adv = [self.X_train[index][0]]
+		temp_label = np.array([[0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]])
+		step = 0.01
+		for i in range(10):
+    			loss_value, grads_value = iterate([img_adv,temp_label])
+    			img_adv += grads_value*step
 	
+		sp.misc.imsave(path+'_'+str(index)+'.jpg',img[0].T)
 		
