@@ -113,6 +113,12 @@ class CNN:
 		self.model = model_from_json(open('models/model_cifar_arch.json').read())
 		self.model.load_weights('models/model_cifar_weights.h5')
 
+		sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+		self.model.compile(loss='categorical_crossentropy', optimizer=sgd)
+		
+		#intiliase a dictionary of layers
+		self.ldict = dict([(layer.name, layer) for layer in self.model.layers])
+
 	def save_img(self,index,path='Images/img'):
 		'''
 		Save an image at the specifed path
@@ -130,6 +136,7 @@ class CNN:
 		'''
 		Generate an adversarial example for the index index in cifar10
 		'''
+
 		labels = K.placeholder(shape=(None,self.nb_classes))
 
 		preds = self.ldict['dense_2'].get_output(train=dropout)
@@ -143,14 +150,14 @@ class CNN:
 		iterate = K.function([img_placeholder,labels], [loss, grads])
 
 
-		img_orig = [self.X_train[index][0]]
-		orig_label = self.Y_train[index][0]
-		img_adv = [self.X_train[index][0]]
-		temp_label = np.array([[0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]])
+		img_orig = [self.X_train[index]] #(1,3,32,32) instead of (3,32,32) 
+		orig_label = self.Y_train[index]
+		img_adv = [self.X_train[index]] #(1,3,32,32) instead of (3,32,32)
+		temp_label = np.array([[0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]]) 
 		step = 0.01
 		for i in range(10):
-    			loss_value, grads_value = iterate([img_adv,temp_label])
-    			img_adv += grads_value*step
-	
-		sp.misc.imsave(path+'_'+str(index)+'.jpg',img[0].T)
-		
+			loss_value, grads_value = iterate([img_adv,temp_label])
+			img_adv += grads_value*step
+			
+		temp = np.mean(img_orig[0]-img_adv[0])
+		print(temp)
