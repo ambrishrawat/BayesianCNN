@@ -119,7 +119,7 @@ class CNN:
 		#intiliase a dictionary of layers
 		self.ldict = dict([(layer.name, layer) for layer in self.model.layers])
 
-	def save_img(self,index,path='Images/img'):
+	def save_img(self,index,path='images/img'):
 		'''
 		Save an image at the specifed path
 		'''
@@ -155,9 +155,9 @@ class CNN:
 		img_adv = [self.X_train[index]] #(1,3,32,32) instead of (3,32,32)
 		temp_label = np.array([[0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]]) 
 		step = 0.01
-		for i in range(10):
+		for i in range(100):
 			loss_value, grads_value = iterate([img_adv,temp_label])
 			img_adv += grads_value*step
 			
-		temp = np.mean(img_orig[0]-img_adv[0])
-		print(temp)
+		sp.misc.imsave('images/img.jpg',img_orig[0].T)
+		sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)

@@ -6,7 +6,8 @@
 # Don't ignore models
 !models/
 !models/*
-
+!images/
+!images/*
 # Don't ignore .gitignore
 !.gitignore
 
