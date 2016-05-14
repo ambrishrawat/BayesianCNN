@@ -53,16 +53,23 @@ class CNN:
 		# the CIFAR10 images are RGB
 		img_channels = 3
 	
-		#First set of layers	
+		#First stack of layers	
+
+		#Layer 1 - Convolution2D - 32 filters of size 3x3ximg_channels, Output neuron volume size - 32x32x32
 		self.model.add(Convolution2D(32, 3, 3, border_mode='same',\
 			input_shape=(img_channels, img_rows, img_cols),name='conv1_1'))	
+		#Layer 2 - ReLU activation 
 		self.model.add(Activation('relu'))
+		#Layer 3 - Convolution2D - 32 filters of size 3x3x32 (32 from the 'depth' of previous Convolution2D Layer)
+		#				Output neuron volume size - 32x32x32
 		self.model.add(Convolution2D(32, 3, 3,name='conv1_2'))
+		#Layer 4 - ReLU activation
 		self.model.add(Activation('relu'))
+		#Layer 5 - Pooling Layer (stride = 2, extend 2x2, 75% rejection?)		
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
 		self.model.add(Dropout(0.25))
 
-		#Second set of layers
+		#Second stack of layers
 		self.model.add(Convolution2D(64, 3, 3, border_mode='same',name='conv2_1'))
 		self.model.add(Activation('relu'))
 		self.model.add(Convolution2D(64, 3, 3,name='conv2_2'))
@@ -70,7 +77,7 @@ class CNN:
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
 		self.model.add(Dropout(0.25))
 
-		#Third set of layers
+		#Third stack of layers
 		self.model.add(Flatten())
 		self.model.add(Dense(512,name='dense_1'))
 		self.model.add(Activation('relu'))
@@ -126,10 +133,15 @@ class CNN:
 		img = np.array(self.X_train[index])
 		sp.misc.imsave(path+'_'+str(index)+'.jpg',img[0].T)
 
-	def classify_image(self,img):
+	def classify_image(self,index,train=False):
 		'''
 		Given a trained network classify an image
-		'''	
+		'''
+		if train==True:
+			pass
+		else:
+			pass
+		#self.model.predict
 		pass
 
 	def gen_adversarial(self,index,dropout=True):
@@ -161,3 +173,6 @@ class CNN:
 			
 		sp.misc.imsave('images/img.jpg',img_orig[0].T)
 		sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
+
+
+	
