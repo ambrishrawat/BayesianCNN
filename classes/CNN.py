@@ -1,4 +1,4 @@
-from __future__ import print_function
+#from __future__ import print_function
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
@@ -161,15 +161,27 @@ class CNN:
 			score = self.model.predict_stochastic(img)
 		else:
 			score = self.model.predict(img)
-		return score
+		return score[0]
 		
 	def classify_image(self,index,stochastic=False,train=False):
 		'''
 		Given a trained network, classify an image
 		'''
-		score = self.get_score(index,stochastic=stochastic,train=train)
-		max_index, max_score = max(enumerate(score),key=operator.itemgetter(1))
-		return max_index
+		score = np.array(self.get_score(index,stochastic=stochastic,train=train))
+		pred_label, pred_score = max(enumerate(score),key=operator.itemgetter(1))
+
+		print 'score, ', score
+		print 'pred_score', pred_score
+		orig_label_array = np.array(self.Y_test[index])
+		orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
+		if train==True:
+			orig_label = np.array(self.Y_train[index])
+			pass
+		
+		print 'Original Label: ', orig_label
+		print 'Predicted Label: ', pred_label
+
+		pass
 
 	def gen_adversarial(self,index,dropout=True):
 		'''
