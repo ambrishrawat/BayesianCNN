@@ -12,6 +12,7 @@ from six.moves import range
 import numpy as np
 import scipy as sp
 from keras import backend as K 
+import operator
 
 class CNN:
 	'''
@@ -146,16 +147,29 @@ class CNN:
 		img = np.array(self.X_train[index])
 		sp.misc.imsave(path+'_'+str(index)+'.jpg',img[0].T)
 
-	def classify_image(self,index,train=False):
+	def get_score(self,index,stochastic=False,train=False):
 		'''
-		Given a trained network classify an image
+		Given a trained network get the softmax output from the output layer
 		'''
+		img = np.array([self.X_test[index,:,:,:]])
 		if train==True:
+			img = np.array([self.X_train[index,:,:,:]])
 			pass
+		
+		
+		if stochastic==True:
+			score = self.model.predict_stochastic(img)
 		else:
-			pass
-		#self.model.predict
-		pass
+			score = self.model.predict(img)
+		return score
+		
+	def classify_image(self,index,stochastic=False,train=False):
+		'''
+		Given a trained network, classify an image
+		'''
+		score = self.get_score(index,stochastic=stochastic,train=train)
+		max_index, max_score = max(enumerate(score),key=operator.itemgetter(1))
+		return max_index
 
 	def gen_adversarial(self,index,dropout=True):
 		'''

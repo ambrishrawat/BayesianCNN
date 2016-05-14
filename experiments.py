@@ -7,4 +7,8 @@ if __name__ == "__main__":
 	#cnn.train_model()
 
 	cnn.load_model()
-	cnn.gen_adversarial(index=2)
+	cnn.classify_image(2)
+	cnn.classify_image(2)
+	cnn.classify_image(2,stochastic=True)
+	cnn.classify_image(2,stochastic=True)
+	#cnn.gen_adversarial(index=2)
