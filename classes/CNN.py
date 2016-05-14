@@ -53,36 +53,49 @@ class CNN:
 		# the CIFAR10 images are RGB
 		img_channels = 3
 	
-		#First stack of layers	
 
 		#Layer 1 - Convolution2D - 32 filters of size 3x3ximg_channels, Output neuron volume size - 32x32x32
 		self.model.add(Convolution2D(32, 3, 3, border_mode='same',\
 			input_shape=(img_channels, img_rows, img_cols),name='conv1_1'))	
-		#Layer 2 - ReLU activation 
+		#Layer 1- ReLU activation 
 		self.model.add(Activation('relu'))
-		#Layer 3 - Convolution2D - 32 filters of size 3x3x32 (32 from the 'depth' of previous Convolution2D Layer)
+
+		#Layer 2 - Convolution2D - 32 filters of size 3x3x32 (32 from the 'depth' of previous Convolution2D Layer)
 		#				Output neuron volume size - 32x32x32
 		self.model.add(Convolution2D(32, 3, 3,name='conv1_2'))
+		#Layer 2 - ReLU activation
+		self.model.add(Activation('relu'))
+
+		#Layer 3 - Pooling Layer (stride = 2, extend 2x2, 75% rejection?) Output neuron volume size - 16x16x32		
+		self.model.add(MaxPooling2D(pool_size=(2, 2)))
+		self.model.add(Dropout(0.25))
+		
+		#Layer 4 - Convolution2D - 64 filters of size 3x3x32 (32 from the 'depth' of previous Convolution2D Layer)
+		#				Output neuron volume size - 16x16x64
+		self.model.add(Convolution2D(64, 3, 3, border_mode='same',name='conv2_1'))
 		#Layer 4 - ReLU activation
 		self.model.add(Activation('relu'))
-		#Layer 5 - Pooling Layer (stride = 2, extend 2x2, 75% rejection?)		
-		self.model.add(MaxPooling2D(pool_size=(2, 2)))
-		self.model.add(Dropout(0.25))
 
-		#Second stack of layers
-		self.model.add(Convolution2D(64, 3, 3, border_mode='same',name='conv2_1'))
-		self.model.add(Activation('relu'))
+		#Layer 5 - Convolution2D - 64 filters of size 3x3x64 (64 from the 'depth' of previous Convolution2D Layer)
+		#				Output neuron volume size - 16x16x64
 		self.model.add(Convolution2D(64, 3, 3,name='conv2_2'))
+		#Layer 5 - ReLU activation
 		self.model.add(Activation('relu'))
+
+		#Layer 6 - Pooling Layer (stride = 2, extend 2x2, 75% rejection?) Output neuron volume size - 8x8x64		
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
 		self.model.add(Dropout(0.25))
 
-		#Third stack of layers
 		self.model.add(Flatten())
+		#Layer 7 - Fully connected layer
 		self.model.add(Dense(512,name='dense_1'))
+		#Layer 7 - ReLU activation
 		self.model.add(Activation('relu'))
 		self.model.add(Dropout(0.5))
+
+		#Layer 8 - Fully connected layer
 		self.model.add(Dense(self.nb_classes,name='dense_2'))
+		#Layer 8 - softmax activation
 		self.model.add(Activation('softmax'))
 
 		#intiliase a dictionary of layers
