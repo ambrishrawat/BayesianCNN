@@ -37,7 +37,23 @@ def exp1():
 	print 'Prediction from trained CNN with droput at test time'
 	print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
 
+
 def exp2():
+	#load model
+	cnn = CNN()
+	cnn.set_data()
+	cnn.load_model()
+	
+	#get image
+	#pick an image
+	index = 2
+	#pick from test set
+	train = False
+
+	cnn.gen_adversarial(index,True)
+
+
+def exp3():
 	'''
 	Get some stats for a model and an image (sanity check)
 	'''
@@ -53,12 +69,7 @@ def exp2():
 	#pick from test set
 	train = False
 	img, orig_label = cnn.get_img(index,train)
-
-	#get classification stats from the trained CNN
-	c_score, c_pred_label, c_pred_score = cnn.get_stats(img,stochastic=False)
-	
-	#get classification stats from the trained Bayesian CNN 
-	bc_score, bc_pred_label, bc_pred_score = cnn.get_stats(img,stochastic=True)
+	CNN.print_report(cnn,img)	
 
 	#misclassification label
 	mis_label = 2
@@ -67,10 +78,10 @@ def exp2():
 	img_adv = cnn.get_adversarial(img,mis_label)
 
 	#print report
-	CNN.print_report(cnn,img)
 	CNN.print_report(cnn,img_adv)
 
 if __name__ == "__main__":
 	
 	#exp1()
-	exp2()
+	#exp2()
+	exp3()

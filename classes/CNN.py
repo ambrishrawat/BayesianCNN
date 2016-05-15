@@ -177,6 +177,60 @@ class CNN:
 			
 		return img_adv
 
+	
+	def get_img(self,index,train=False):
+		'''
+		Given index, data (train/test), get the image
+		'''		
+		img = [self.X_test[index]]
+		orig_label_array = np.array(self.Y_test[index])
+		if train==True:
+			img = [self.X_train[index]]
+			orig_label_array = np.array(self.Y_test[index])
+			pass
+		orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
+		return img, orig_label
+
+
+	def get_stats(self,img,stochastic=False):
+		'''
+		Given an image, get the classfication stats from a trained CNN (both with and without-dropout at test time)
+		'''
+		#get the probability vector (output of the trained CNN)
+		img = np.array(img)
+		if stochastic==False:
+			score = self.model.predict(img) #traditional CNN
+			score_mat = np.matrix(score[0])
+		else:
+			score = self.model.predict_stochastic(img) #with dropout at test time
+			score_mat = np.matrix(score[0])
+			for i in range(1,5):
+				score = self.model.predict_stochastic(img)
+				score_mat = np.vstack((score_mat,score[0]))
+		score = score[0]
+		
+		#get the predicted label and the predicted score corresponding to that label
+		pred_label, pred_score = max(enumerate(score),key=operator.itemgetter(1))		
+
+		return score, pred_label, pred_score, score_mat
+		
+	@staticmethod
+	def print_report(cnn,img):
+
+		#get classification stats from the trained CNN
+		c_score, c_pred_label, c_pred_score, c_score_mat = cnn.get_stats(img,stochastic=False)
+	
+		#get classification stats from the trained Bayesian CNN 
+		bc_score, bc_pred_label, bc_pred_score, bc_score_mat = cnn.get_stats(img,stochastic=True)
+
+		#print report
+		print 'Traditional CNN'
+		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
+		print 'Shape: ', c_score_mat.shape		
+		print 'Bayesian CNN'		
+		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
+		print 'Shape: ', bc_score_mat.shape	
+
 	def gen_adversarial(self,index,dropout=True):
 		'''
 		Generate an adversarial example for the index index in cifar10
@@ -195,60 +249,43 @@ class CNN:
 		iterate = K.function([img_placeholder,labels], [loss, grads])
 
 
-		img_orig = [self.X_train[index]] #(1,3,32,32) instead of (3,32,32) 
-		orig_label = self.Y_train[index]
-		img_adv = [self.X_train[index]] #(1,3,32,32) instead of (3,32,32)
-		temp_label = np.array([[0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]]) 
+		img_orig = [self.X_test[index]] #(1,3,32,32) instead of (3,32,32) 
+		orig_label = self.Y_test[index]
+		img_adv = [self.X_test[index]] #(1,3,32,32) instead of (3,32,32)
+		temp_label = np.array([[0., 0., 0., 0., 0., 0., 0., 1., 0., 0.]]) 
 		step = 0.01
 		for i in range(100):
 			loss_value, grads_value = iterate([img_adv,temp_label])
 			img_adv += grads_value*step
+			#print grads_value
 			
-		sp.misc.imsave('images/img.jpg',img_orig[0].T)
-		sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
-
-	def get_img(self,index,train=False):
-		'''
-		Given index, data (train/test), get the image
-		'''		
-		img = np.array([self.X_test[index]])
-		orig_label_array = np.array(self.Y_test[index])
-		if train==True:
-			img = np.array([self.X_train[index]])
-			orig_label_array = np.array(self.Y_test[index])
-			pass
-		orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
-		return img, orig_label
+		#sp.misc.imsave('images/img.jpg',img_orig[0].T)
+		#sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
 
 
-	def get_stats(self,img,stochastic=False):
-		'''
-		Given an image, get the output stats from a trained CNN
-		'''
-		#get the probability vector (output of the trained CNN)
-		if stochastic==False:
-			score = self.model.predict(img) #traditional CNN
-		else:
-			score = self.model.predict_stochastic(img) #with dropout at test time
-		score = score[0]
-		
-		#get the predicted label and the predicted score corresponding to that label
-		pred_label, pred_score = max(enumerate(score),key=operator.itemgetter(1))		
-
-		return score, pred_label, pred_score
-		
-	@staticmethod
-	def print_report(cnn,img):
-
-		#get classification stats from the trained CNN
-		c_score, c_pred_label, c_pred_score = cnn.get_stats(img,stochastic=False)
+		c_score, c_pred_label, c_pred_score = self.get_stats(img_orig,stochastic=False)
 	
 		#get classification stats from the trained Bayesian CNN 
-		bc_score, bc_pred_label, bc_pred_score = cnn.get_stats(img,stochastic=True)
+		bc_score, bc_pred_label, bc_pred_score = self.get_stats(img_orig,stochastic=True)
 
 		#print report
 		print 'Prediction from trained CNN'
 		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
 		print 'Prediction from trained CNN with droput at test time'
 		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
+
+
+		#get classification stats from the trained CNN
+		c_score, c_pred_label, c_pred_score = self.get_stats(img_adv,stochastic=False)
 	
+		#get classification stats from the trained Bayesian CNN 
+		bc_score, bc_pred_label, bc_pred_score = self.get_stats(img_adv,stochastic=True)
+
+		#print report
+		print 'Prediction from trained CNN'
+		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
+		print 'Prediction from trained CNN with droput at test time'
+		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
+
+	
+		
