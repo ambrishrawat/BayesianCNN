@@ -175,7 +175,8 @@ class CNN:
 		orig_label_array = np.array(self.Y_test[index])
 		orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
 		if train==True:
-			orig_label = np.array(self.Y_train[index])
+			orig_label_array = np.array(self.Y_train[index])
+			orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
 			pass
 		
 		print 'Original Label: ', orig_label
@@ -214,4 +215,49 @@ class CNN:
 		sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
 
 
-	
+	def get_img(index,train=False)
+		#given index, train, choose an image
+		img = np.array([self.X_test[index]])
+		orig_label_array = np.array(self.Y_test[index])
+		if train==True:
+			img = np.array([self.X_train[index]])
+			orig_label_array = np.array(self.Y_test[index])
+			pass
+		orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
+		return img, orig_label
+
+	@staticmethod
+	def get_cnn_stats(cnn,img):
+		'''
+		
+		'''
+
+		#get the probability vector (output of the trained CNN)
+		
+		score = cnn.model.predict(img)
+		score = score[0]
+		
+		#get the predicted label and the predicted score corresponding to that label
+		pred_label, pred_score = max(enumerate(score),key=operator.itemgetter(1))		
+
+		print 'label ', pred_label, ' score ', pred_score
+
+		return score, pred_label, pred_score
+		
+	@staticmethod
+	def get_bcnn_stats(cnn,img):
+		'''
+		
+		'''
+
+		#get the probability vector (output of the trained bayesian CNN)
+		
+		score = cnn.model.predict_stochastic(img)
+		score = score[0]
+		
+		#get the predicted label and the predicted score corresponding to that label
+		pred_label, pred_score = max(enumerate(score),key=operator.itemgetter(1))		
+
+		print 'label ', pred_label, ' score ', pred_score
+
+		return score, pred_label, pred_score
