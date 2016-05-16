@@ -135,7 +135,7 @@ class CNN:
 		self.model.load_weights('models/model_cifar_weights.h5')
 
 		sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-		self.model.compile(loss='categorical_crossentropy', optimizer=sgd)
+		self.model.compile(loss='categorical_crossentropy', optimizer=sgd) 
 		
 		#intiliase a dictionary of layers
 		self.ldict = dict([(layer.name, layer) for layer in self.model.layers])
@@ -154,7 +154,7 @@ class CNN:
 
 		labels = K.placeholder(shape=(None,self.nb_classes))
 
-		preds = self.ldict['dense_2'].get_output(train=stochastic)
+		preds = self.model.get_output(train=stochastic)
 		img_placeholder = self.model.get_input()
  
 		#loss function
@@ -164,16 +164,16 @@ class CNN:
 		grads = K.gradients(loss,img_placeholder)
 		iterate = K.function([img_placeholder,labels], [loss, grads])
 
-
+		img = np.array(img)
 		img_orig = img #(1,3,32,32) instead of (3,32,32) 
-		img_adv = img #(1,3,32,32) instead of (3,32,32)
+		img_adv = img.copy() #(1,3,32,32) instead of (3,32,32)
 
 		temp_label = np.array([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]) 
 
 		step = 0.01
 		for i in range(100):
 			loss_value, grads_value = iterate([img_adv,temp_label])
-			img_adv += grads_value*step
+			img_adv -= grads_value*step
 			
 		return img_adv
 
@@ -191,6 +191,25 @@ class CNN:
 		orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
 		return img, orig_label
 
+	def compute_test_error(self,test_images,test_labels):
+		'''
+		Test set evaluation
+		'''
+		num_img = test_images.shape[0]
+		print 'Number of images in the test set: ', num_img
+		score = self.model.predict(test_images)
+		print 'score (shape): ', score.shape
+
+		pred_labels = np.zeros(num_img)
+		correct_labels = np.zeros(num_img)
+		#TODO: use list comprehension?
+		for i in range(num_img):
+			correct_labels[i],_ = max(enumerate(test_labels[i]),key=operator.itemgetter(1))
+			pred_labels[i],_ = max(enumerate(score[i]),key=operator.itemgetter(1))
+
+		total_correct = (correct_labels == pred_labels).sum()
+		error = float(num_img - total_correct)/float(num_img)
+		print error
 
 	def get_stats(self,img,stochastic=False):
 		'''
@@ -204,9 +223,10 @@ class CNN:
 		else:
 			score = self.model.predict_stochastic(img) #with dropout at test time
 			score_mat = np.matrix(score[0])
-			for i in range(1,20):
+			for i in range(1,100):
 				score = self.model.predict_stochastic(img)
 				score_mat = np.vstack((score_mat,score[0]))
+			#TODO: btch update to make it faster	
 		score = np.mean(score_mat,axis=0)
 		score = np.squeeze(np.asarray(score))
 		#get the predicted label and the predicted score corresponding to that label
@@ -238,7 +258,8 @@ class CNN:
 
 		labels = K.placeholder(shape=(None,self.nb_classes))
 
-		preds = self.ldict['dense_2'].get_output(train=dropout)
+		#preds = self.ldict['dense_2'].get_output(train=dropout)
+		preds = self.model.get_output(train=dropout)
 		img_placeholder = self.model.get_input()
  
 		#loss function
@@ -255,12 +276,13 @@ class CNN:
 		temp_label = np.array([[0., 0., 0., 0., 1., 0., 0., 0., 0., 0.]]) 
 		step = 0.001
 		for i in range(100):
-			loss_value, grads_value = iterate([img_orig,temp_label])
-			img_adv += grads_value*step
+			loss_value, grads_value = iterate([img_adv,temp_label])
+			img_adv -= grads_value*step
 			#print grads_value
-			
-		#sp.misc.imsave('images/img.jpg',img_orig[0].T)
-		#sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
+		
+		print 'Index: ', index, ' Correct label: ', orig_label	
+		sp.misc.imsave('images/img.jpg',img_orig[0].T)
+		sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
 
 
 		#get classification stats from the trained CNN

@@ -46,7 +46,7 @@ def exp2():
 	
 	#get image
 	#pick an image
-	index = 2
+	index = 42
 	#pick from test set
 	train = False
 
@@ -74,14 +74,31 @@ def exp3():
 	#misclassification label
 	mis_label = 2
 	
-	#get adversaril image corresponding to img and intended misclassification to label mis_label
+	#get adversarial image corresponding to img and intended misclassification to label mis_label
 	img_adv = cnn.get_adversarial(img,mis_label)
 
 	#print report
 	CNN.print_report(cnn,img_adv)
 
+def exp4():
+	'''
+	Get test error as a function of gradient steps (0-10000)
+	for an adversarial examples for a normal CNN 
+	'''
+	
+	#load model
+	cnn = CNN()
+	cnn.set_data()
+	cnn.load_model()
+
+	#compute test error
+	cnn.compute_test_error(cnn.X_test[0:100],cnn.Y_test[0:100])
+	
+	
+	pass	
+	
 if __name__ == "__main__":
 	
 	#exp1()
-	exp2()
-	#exp3()
+	#exp2()
+	exp4()
