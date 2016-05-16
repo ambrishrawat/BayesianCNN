@@ -168,7 +168,7 @@ class CNN:
 		img_orig = img #(1,3,32,32) instead of (3,32,32) 
 		img_adv = img #(1,3,32,32) instead of (3,32,32)
 
-		temp_label = np.array([[0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]]) 
+		temp_label = np.array([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]) 
 
 		step = 0.01
 		for i in range(100):
@@ -204,11 +204,11 @@ class CNN:
 		else:
 			score = self.model.predict_stochastic(img) #with dropout at test time
 			score_mat = np.matrix(score[0])
-			for i in range(1,5):
+			for i in range(1,20):
 				score = self.model.predict_stochastic(img)
 				score_mat = np.vstack((score_mat,score[0]))
-		score = score[0]
-		
+		score = np.mean(score_mat,axis=0)
+		score = np.squeeze(np.asarray(score))
 		#get the predicted label and the predicted score corresponding to that label
 		pred_label, pred_score = max(enumerate(score),key=operator.itemgetter(1))		
 
@@ -226,10 +226,10 @@ class CNN:
 		#print report
 		print 'Traditional CNN'
 		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
-		print 'Shape: ', c_score_mat.shape		
+		print 'Shape (mat): ', c_score_mat.shape, ' Shape (vec): ', c_score.shape	
 		print 'Bayesian CNN'		
 		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
-		print 'Shape: ', bc_score_mat.shape	
+		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape
 
 	def gen_adversarial(self,index,dropout=True):
 		'''
@@ -252,10 +252,10 @@ class CNN:
 		img_orig = [self.X_test[index]] #(1,3,32,32) instead of (3,32,32) 
 		orig_label = self.Y_test[index]
 		img_adv = [self.X_test[index]] #(1,3,32,32) instead of (3,32,32)
-		temp_label = np.array([[0., 0., 0., 0., 0., 0., 0., 1., 0., 0.]]) 
-		step = 0.01
+		temp_label = np.array([[0., 0., 0., 0., 1., 0., 0., 0., 0., 0.]]) 
+		step = 0.001
 		for i in range(100):
-			loss_value, grads_value = iterate([img_adv,temp_label])
+			loss_value, grads_value = iterate([img_orig,temp_label])
 			img_adv += grads_value*step
 			#print grads_value
 			
@@ -263,29 +263,33 @@ class CNN:
 		#sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
 
 
-		c_score, c_pred_label, c_pred_score = self.get_stats(img_orig,stochastic=False)
+		#get classification stats from the trained CNN
+		c_score, c_pred_label, c_pred_score, c_score_mat = self.get_stats(img_orig,stochastic=False)
 	
 		#get classification stats from the trained Bayesian CNN 
-		bc_score, bc_pred_label, bc_pred_score = self.get_stats(img_orig,stochastic=True)
+		bc_score, bc_pred_label, bc_pred_score, bc_score_mat = self.get_stats(img_orig,stochastic=True)
 
 		#print report
-		print 'Prediction from trained CNN'
+		print 'Traditional CNN'
 		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
-		print 'Prediction from trained CNN with droput at test time'
+		print 'Shape (mat): ', c_score_mat.shape, ' Shape (vec): ', c_score.shape, ' Sum (vec): ', np.sum(c_score)
+		print 'Bayesian CNN'		
 		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
+		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape, ' Sum (vec): ', np.sum(bc_score)
 
 
 		#get classification stats from the trained CNN
-		c_score, c_pred_label, c_pred_score = self.get_stats(img_adv,stochastic=False)
+		c_score, c_pred_label, c_pred_score, c_score_mat = self.get_stats(img_adv,stochastic=False)
 	
 		#get classification stats from the trained Bayesian CNN 
-		bc_score, bc_pred_label, bc_pred_score = self.get_stats(img_adv,stochastic=True)
+		bc_score, bc_pred_label, bc_pred_score, bc_score_mat = self.get_stats(img_adv,stochastic=True)
 
 		#print report
-		print 'Prediction from trained CNN'
+		print 'Traditional CNN'
 		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
-		print 'Prediction from trained CNN with droput at test time'
+		print 'Shape (mat): ', c_score_mat.shape, ' Shape (vec): ', c_score.shape, ' Sum (vec): ', np.sum(c_score)	
+		print 'Bayesian CNN'		
 		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
-
+		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape, ' Sum (vec): ', np.sum(bc_score)
 	
 		

@@ -83,5 +83,5 @@ def exp3():
 if __name__ == "__main__":
 	
 	#exp1()
-	#exp2()
-	exp3()
+	exp2()
+	#exp3()
