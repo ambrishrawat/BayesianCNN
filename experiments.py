@@ -80,6 +80,7 @@ def exp3():
 	#print report
 	CNN.print_report(cnn,img_adv)
 
+
 def exp4():
 	'''
 	Get test error as a function of gradient steps (0-10000)
@@ -90,11 +91,14 @@ def exp4():
 	cnn = CNN()
 	cnn.set_data()
 	cnn.load_model()
+	
+	#generate random adversarial labels and the corresponding adversarial images for the data set	
+	X_test_adv, Y_test_adv = cnn.get_rnd_adv_img(cnn.X_test,cnn.Y_test)
+	print 'X_test_adv.shape: ', X_test_adv.shape, ' Y_test_adv.shape: ', Y_test_adv.shape
 
 	#compute test error
-	cnn.compute_test_error(cnn.X_test[0:100],cnn.Y_test[0:100])
-	
-	
+	err = cnn.compute_test_error(X_test_adv,cnn.Y_test)
+	print "Test Error: ",err
 	pass	
 	
 if __name__ == "__main__":

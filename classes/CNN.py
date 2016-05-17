@@ -147,6 +147,52 @@ class CNN:
 		sp.misc.imsave(path+'_'+tag+'.jpg',img[0].T)
 
 
+	def get_rnd_adv_img(self,X_test,Y_test):
+
+		'''
+		genrate adversairal examples for a normal CNN
+		Arguments
+			- a cnn model 	(cnn)
+			- a set of input images	(X_test)
+			- a set of labels corresponding to the input images (Y_test)
+		Return
+			- a set of output images (X_test_adv)
+		'''
+		X_test = np.array(X_test)
+		X_test_adv = X_test.copy()
+
+		#given a Y_test label generate a random adversarial labels. 
+		Y_test_adv = CNN.gen_rnd_adv_label(Y_test)
+
+		labels = K.placeholder(shape=(Y_test.shape[0],self.nb_classes))
+
+		model_output = self.model.get_output()
+		model_input = self.model.get_input()
+ 
+		#loss function
+		loss = K.mean(categorical_crossentropy(labels,model_output))
+
+		#gradient of loss with respect to input image
+		grads = K.gradients(loss,model_input)
+		iterate = K.function([model_input,labels], [loss, grads])
+
+		step = 0.001
+		for i in range(100):
+			loss_value, grad_value = iterate([X_test_adv,Y_test_adv])
+			X_test_adv -= grad_value*step
+
+		return X_test_adv, Y_test_adv
+
+	@staticmethod
+	def gen_rnd_adv_label(Y_test):
+		Y_test = np.array(Y_test)
+		Y_test_adv = Y_test.copy()
+
+		for i in range(Y_test_adv.shape[0]):
+			while (Y_test_adv[i]==Y_test[i]).sum() ==0:
+				np.random.shuffle(Y_test_adv[i])	
+		return Y_test_adv	
+
 	def get_adversarial(self,img,mis_label,stochastic=False):
 		'''
 		Generate an adversarial example for an image (desired misclassification to label mis_label)
@@ -209,7 +255,7 @@ class CNN:
 
 		total_correct = (correct_labels == pred_labels).sum()
 		error = float(num_img - total_correct)/float(num_img)
-		print error
+		return error
 
 	def get_stats(self,img,stochastic=False):
 		'''
