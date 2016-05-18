@@ -147,7 +147,7 @@ class CNN:
 		sp.misc.imsave(path+'_'+tag+'.jpg',img[0].T)
 
 
-	def get_rnd_adv_img(self,X_test,Y_test, stochastic = False):
+	def get_rnd_adv_img(self,X_test,Y_test, desired_stats, fp, step = 0.01, num_iter = 1000, stochastic = False):
 
 		'''
 		genrate adversairal examples for a normal CNN
@@ -162,7 +162,7 @@ class CNN:
 		X_test_adv = X_test.copy()
 
 		#given a Y_test label generate a random adversarial labels. 
-		Y_test_adv = CNN.gen_rnd_adv_label(Y_test)
+		Y_test_adv = self.gen_rnd_adv_label(Y_test)
 
 		labels = K.placeholder(shape=(Y_test.shape[0],self.nb_classes))
 
@@ -176,50 +176,31 @@ class CNN:
 		grads = K.gradients(loss,model_input)
 		iterate = K.function([model_input,labels], [loss, grads])
 
-		f = open('stats.txt','w')
-		f.write('step,err_cnn,err_bcnn,rms\n')
-
-		err_cnn = []
-		err_bcnn = []
-		err_cnn_adv = []
-		err_bcnn_adv = []
-		rms = []
-		step = 0.001
-		j = 0
-		for i in range(0,101):
+		
+		for i in range(0,num_iter+1):
 			print 'Iteration ', i
-			if i%10 == 0:
-			#if i in [0, 25, 50, 100, 200, 400, 800, 1000]:
-				ecnn, ecnn_adv = self.compute_test_error(X_test_adv,Y_test, Y_test_adv, dropout = False)
-				ebcnn, ebcnn_adv = self.compute_test_error(X_test_adv,Y_test, Y_test_adv, dropout = True)
-
-				err_cnn.append(ecnn)
-				err_bcnn.append(ebcnn)
-				err_cnn_adv.append(ecnn_adv)
-				err_bcnn_adv.append(ebcnn_adv)
-						
-
-				rms.append(np.linalg.norm(X_test_adv-X_test))
-				print 'Step: ', i, ' Error (CNN): ', err_cnn[j], ' Error (BayseianCNN): ', err_bcnn[j],\
-						' Error adv (CNN): ', err_cnn_adv[j], ' Error adv (BayseianCNN): ', err_bcnn_adv[j],\
-						' RMS: ', rms[j]
-				f.write(str(i)+','+str(err_cnn[j])+','+str(err_bcnn[j])+','+\
-					str(err_cnn_adv[j])+','+str(err_bcnn_adv[j])+','+str(rms[j])+'\n')
-				j+=1
-			
+			desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
 			loss_value, grad_value = iterate([X_test_adv,Y_test_adv])
 			X_test_adv -= grad_value*step
-		f.close()
-		return X_test_adv, Y_test_adv, np.array(err_cnn), np.array(err_bcnn), np.array(rms)
 
-	@staticmethod
-	def gen_rnd_adv_label(Y_test):
+		return X_test_adv, Y_test_adv
+
+
+
+
+	def gen_rnd_adv_label(self,Y_test):
+		'''
+		Shuffle the labels of the Y_test to get a Y_test_labels
+		'''
 		Y_test = np.array(Y_test)
 		Y_test_adv = Y_test.copy()
 
 		for i in range(Y_test_adv.shape[0]):
-			while (Y_test_adv[i]==Y_test[i]).sum() ==0:
-				np.random.shuffle(Y_test_adv[i])	
+			while (Y_test_adv[i]==Y_test[i]).sum() == self.nb_classes:
+				temp = Y_test_adv[i]
+				np.random.shuffle(temp)
+				Y_test_adv[i] = temp
+			
 		return Y_test_adv	
 
 	
@@ -262,7 +243,9 @@ class CNN:
 			correct_labels[i],_ = max(enumerate(test_labels[i]),key=operator.itemgetter(1))
 			pred_labels[i],_ = max(enumerate(score[i]),key=operator.itemgetter(1))
 			adv_labels[i],_ = max(enumerate(test_adv_labels[i]),key=operator.itemgetter(1))
-
+			
+		#if (adv_labels==pred_labels).sum() == num_img:
+		#	print 'success'
 		total_adv_correct = (adv_labels == pred_labels).sum()
 		error_adv = float(num_img - total_adv_correct)/float(num_img)
 		total_correct = (correct_labels == pred_labels).sum()
