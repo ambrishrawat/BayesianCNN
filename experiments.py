@@ -104,8 +104,8 @@ def exp4():
 	#stats file
 	f = open(fpath,'w')
 	f.write('num_samples: '+ str(num_samples) + '\n'\
-		+ 'step: ' + str(0.01) + '\n'\
-		+ 'stochastic: ' + str(False) + '\n')
+		+ 'step: ' + str(step) + '\n'\
+		+ 'stochastic: ' + str(stochastic) + '\n')
 	
 	f.write('iteration,err_cnn,err_bcnn,err_cnn_adv,err_bcnn_adv,rms\n')	
 	f.close()

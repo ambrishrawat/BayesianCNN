@@ -1,0 +1,4 @@
+file: statsb_18_5_1600
+num_samples: 100
+step: 0.01
+stochastic: False

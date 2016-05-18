@@ -1,0 +1,16 @@
+num_samples: 1
+step: 0.01
+stochastic: False
+image file,iteration,original label, intended adv label, cnn_pred_label, bcnn_adv_label, pred_cnn_score, pred_bcnn_score, rms
+img_0_0,ship,airplane,ship,ship,0.999969005585,0.969404287034,0.0
+img_0_20,ship,airplane,airplane,airplane,0.998884260654,0.628667829794,0.83583265543
+img_0_50,ship,airplane,airplane,airplane,0.99942111969,0.638783429232,0.837809383869
+img_0_100,ship,airplane,airplane,airplane,0.999675631523,0.640476362963,0.839655458927
+img_0_200,ship,airplane,airplane,airplane,0.999821960926,0.668148475286,0.841621220112
+img_0_500,ship,airplane,airplane,airplane,0.99993121624,0.660969130703,0.844670236111
+img_0_1000,ship,airplane,airplane,airplane,0.999964118004,0.678081063238,0.846592187881
+img_0_2000,ship,airplane,airplane,airplane,0.999981284142,0.741107644508,0.848479747772
+img_0_5000,ship,airplane,airplane,airplane,0.999991893768,0.737936045258,0.851151823997
+img_0_10000,ship,airplane,airplane,airplane,0.999995946884,0.741020623439,0.853307366371
+img_0_20000,ship,airplane,airplane,airplane,0.999997854233,0.735179500857,0.855829238892
+img_0_50000,ship,airplane,airplane,airplane,0.999999046326,0.791375252256,0.859265863895

@@ -6,12 +6,16 @@
 # Don't ignore models
 !models/
 !models/*
-!images/
-!images/*
+!img_stats/
+!img_stats/*
+!stats/
+!stats/*
 # Don't ignore .gitignore
 !.gitignore
 
 # Now exclude our type
 !*.py
 !*.md
-
+!*.jpg
+!*.m
+!*.txt
