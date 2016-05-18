@@ -39,6 +39,7 @@ class CNN:
 		self.X_test = self.X_test.astype('float32')
 		self.X_train /= 255
 		self.X_test /= 255
+		self.labels = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 
 	def set_model_arch(self):
@@ -144,7 +145,7 @@ class CNN:
 		'''
 		Save an image at the specifed path
 		'''
-		sp.misc.imsave(path+'_'+tag+'.jpg',img[0].T)
+		sp.misc.imsave(path+'_'+tag+'.jpg',np.rot90(img.T,k=3))
 
 
 	def get_rnd_adv_img(self,X_test,Y_test, desired_stats, fp, step = 0.01, num_iter = 1000, stochastic = False):
@@ -155,6 +156,11 @@ class CNN:
 			- a cnn model 	(cnn)
 			- a set of input images	(X_test)
 			- a set of labels corresponding to the input images (Y_test)
+			- desired_stats (print function, which stats to store)
+			- filepath
+			- step
+			- num_iter
+			- stochastic (for BCNN or for CNN)
 		Return
 			- a set of output images (X_test_adv)
 		'''
@@ -178,7 +184,6 @@ class CNN:
 
 		
 		for i in range(0,num_iter+1):
-			print 'Iteration ', i
 			desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
 			loss_value, grad_value = iterate([X_test_adv,Y_test_adv])
 			X_test_adv -= grad_value*step
@@ -257,19 +262,18 @@ class CNN:
 		Given an image, get the classfication stats from a trained CNN (both with and without-dropout at test time)
 		'''
 		#get the probability vector (output of the trained CNN)
-		img = np.array(img)
+		img = np.array([img])
+		score_mat = []
 		if stochastic==False:
-			score = self.model.predict(img) #traditional CNN
-			score_mat = np.matrix(score[0])
+			score = self.model.predict(img)
+			score_mat.append(score)
 		else:
-			score = self.model.predict_stochastic(img) #with dropout at test time
-			score_mat = np.matrix(score[0])
 			for i in range(1,100):
 				score = self.model.predict_stochastic(img)
-				score_mat = np.vstack((score_mat,score[0]))
-			#TODO: btch update to make it faster	
+				score_mat.append(score)
+		score_mat = np.array(score_mat)
 		score = np.mean(score_mat,axis=0)
-		score = np.squeeze(np.asarray(score))
+		score = score[0]
 		#get the predicted label and the predicted score corresponding to that label
 		pred_label, pred_score = max(enumerate(score),key=operator.itemgetter(1))		
 
