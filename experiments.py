@@ -93,12 +93,12 @@ def exp4():
 	cnn.load_model()
 	
 	#generate random adversarial labels and the corresponding adversarial images for the data set	
-	X_test_adv, Y_test_adv = cnn.get_rnd_adv_img(cnn.X_test,cnn.Y_test)
+	X_test_adv, Y_test_adv, err_cnn, err_bcnn, rms = cnn.get_rnd_adv_img(cnn.X_test[0:100],cnn.Y_test[0:100])
 	print 'X_test_adv.shape: ', X_test_adv.shape, ' Y_test_adv.shape: ', Y_test_adv.shape
-
-	#compute test error
-	err = cnn.compute_test_error(X_test_adv,cnn.Y_test)
-	print "Test Error: ",err
+	print 'err_cnn.shape: ', err_cnn.shape, ' err_bcnn.shape: ', err_bcnn.shape, 'rms.shape: ', rms.shape
+	np.save('error_cnn.npy',err_cnn)
+	np.save('error_bcnn.npy',err_bcnn)
+	np.save('rms.npy',rms)
 	pass	
 	
 if __name__ == "__main__":

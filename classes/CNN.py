@@ -124,7 +124,7 @@ class CNN:
 		open(save_path_key+'_arch.json', 'w').write(json_string)
 		self.model.save_weights(save_path_key+'_weights.h5')
 
-	
+		#TODO: compute training, validation and test error plots
 
 	def load_model(self):
 		'''
@@ -147,7 +147,7 @@ class CNN:
 		sp.misc.imsave(path+'_'+tag+'.jpg',img[0].T)
 
 
-	def get_rnd_adv_img(self,X_test,Y_test):
+	def get_rnd_adv_img(self,X_test,Y_test, stochastic = False):
 
 		'''
 		genrate adversairal examples for a normal CNN
@@ -166,7 +166,7 @@ class CNN:
 
 		labels = K.placeholder(shape=(Y_test.shape[0],self.nb_classes))
 
-		model_output = self.model.get_output()
+		model_output = self.model.get_output(train=stochastic)
 		model_input = self.model.get_input()
  
 		#loss function
@@ -176,12 +176,41 @@ class CNN:
 		grads = K.gradients(loss,model_input)
 		iterate = K.function([model_input,labels], [loss, grads])
 
+		f = open('stats.txt','w')
+		f.write('step,err_cnn,err_bcnn,rms\n')
+
+		err_cnn = []
+		err_bcnn = []
+		err_cnn_adv = []
+		err_bcnn_adv = []
+		rms = []
 		step = 0.001
-		for i in range(100):
+		j = 0
+		for i in range(0,101):
+			print 'Iteration ', i
+			if i%10 == 0:
+			#if i in [0, 25, 50, 100, 200, 400, 800, 1000]:
+				ecnn, ecnn_adv = self.compute_test_error(X_test_adv,Y_test, Y_test_adv, dropout = False)
+				ebcnn, ebcnn_adv = self.compute_test_error(X_test_adv,Y_test, Y_test_adv, dropout = True)
+
+				err_cnn.append(ecnn)
+				err_bcnn.append(ebcnn)
+				err_cnn_adv.append(ecnn_adv)
+				err_bcnn_adv.append(ebcnn_adv)
+						
+
+				rms.append(np.linalg.norm(X_test_adv-X_test))
+				print 'Step: ', i, ' Error (CNN): ', err_cnn[j], ' Error (BayseianCNN): ', err_bcnn[j],\
+						' Error adv (CNN): ', err_cnn_adv[j], ' Error adv (BayseianCNN): ', err_bcnn_adv[j],\
+						' RMS: ', rms[j]
+				f.write(str(i)+','+str(err_cnn[j])+','+str(err_bcnn[j])+','+\
+					str(err_cnn_adv[j])+','+str(err_bcnn_adv[j])+','+str(rms[j])+'\n')
+				j+=1
+			
 			loss_value, grad_value = iterate([X_test_adv,Y_test_adv])
 			X_test_adv -= grad_value*step
-
-		return X_test_adv, Y_test_adv
+		f.close()
+		return X_test_adv, Y_test_adv, np.array(err_cnn), np.array(err_bcnn), np.array(rms)
 
 	@staticmethod
 	def gen_rnd_adv_label(Y_test):
@@ -192,36 +221,6 @@ class CNN:
 			while (Y_test_adv[i]==Y_test[i]).sum() ==0:
 				np.random.shuffle(Y_test_adv[i])	
 		return Y_test_adv	
-
-	def get_adversarial(self,img,mis_label,stochastic=False):
-		'''
-		Generate an adversarial example for an image (desired misclassification to label mis_label)
-		'''
-
-		labels = K.placeholder(shape=(None,self.nb_classes))
-
-		preds = self.model.get_output(train=stochastic)
-		img_placeholder = self.model.get_input()
- 
-		#loss function
-		loss = K.mean(categorical_crossentropy(labels,preds))
-
-		#gradient of loss with respect to input image
-		grads = K.gradients(loss,img_placeholder)
-		iterate = K.function([img_placeholder,labels], [loss, grads])
-
-		img = np.array(img)
-		img_orig = img #(1,3,32,32) instead of (3,32,32) 
-		img_adv = img.copy() #(1,3,32,32) instead of (3,32,32)
-
-		temp_label = np.array([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]) 
-
-		step = 0.01
-		for i in range(100):
-			loss_value, grads_value = iterate([img_adv,temp_label])
-			img_adv -= grads_value*step
-			
-		return img_adv
 
 	
 	def get_img(self,index,train=False):
@@ -237,25 +236,38 @@ class CNN:
 		orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
 		return img, orig_label
 
-	def compute_test_error(self,test_images,test_labels):
+	def compute_test_error(self,test_images,test_labels, test_adv_labels, dropout = False):
 		'''
 		Test set evaluation
 		'''
 		num_img = test_images.shape[0]
-		print 'Number of images in the test set: ', num_img
-		score = self.model.predict(test_images)
-		print 'score (shape): ', score.shape
-
+		#print 'Number of images in the test set: ', num_img
+		score_mat = []
+		if dropout==False:
+			score = self.model.predict(test_images)
+			#print 'score (shape): ', score.shape
+			score_mat.append(score)
+		else:
+			for i in range(1,100):
+				score = self.model.predict_stochastic(test_images)
+				score_mat.append(score)
+		score_mat = np.array(score_mat)
+		#print 'score_mat (shape): ', score_mat.shape
+		score = np.mean(score_mat,axis=0)
 		pred_labels = np.zeros(num_img)
 		correct_labels = np.zeros(num_img)
+		adv_labels = np.zeros(num_img)
 		#TODO: use list comprehension?
 		for i in range(num_img):
 			correct_labels[i],_ = max(enumerate(test_labels[i]),key=operator.itemgetter(1))
 			pred_labels[i],_ = max(enumerate(score[i]),key=operator.itemgetter(1))
+			adv_labels[i],_ = max(enumerate(test_adv_labels[i]),key=operator.itemgetter(1))
 
+		total_adv_correct = (adv_labels == pred_labels).sum()
+		error_adv = float(num_img - total_adv_correct)/float(num_img)
 		total_correct = (correct_labels == pred_labels).sum()
 		error = float(num_img - total_correct)/float(num_img)
-		return error
+		return error, error_adv
 
 	def get_stats(self,img,stochastic=False):
 		'''
