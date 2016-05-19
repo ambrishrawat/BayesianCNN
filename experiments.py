@@ -149,10 +149,10 @@ def exp5():
 	stochastic = False
 	fpath = 'img_stats/log.txt'
 	
-	'''
+	
 	#10 images belonging to 10 classes and save them
-	#indices = [0, 1, 433, 4, 225, 37, 557, 42, 21, 357]
-	indices = [0]
+	indices = [0, 1, 433, 4, 225, 37, 557, 42, 21, 357]
+	#indices = [0]
 	num_samples = len(indices)
 	labels = cnn.labels
 	test_images = []
@@ -166,6 +166,7 @@ def exp5():
 	
 	test_images = np.array(test_images)
 	test_labels = np.array(test_labels)
+
 	'''
 
 	#stats file
@@ -203,7 +204,7 @@ def exp5():
 	X_test_adv, Y_test_adv = cnn.get_rnd_adv_img(cnn.X_test[1:num_samples+1],cnn.Y_test[1:num_samples+1], \
 				desired_stats, fpath, step = step, num_iter = num_iter, stochastic = stochastic)
 	pass	
-	
+	'''
 	
 if __name__ == "__main__":
 	
