@@ -187,6 +187,7 @@ class CNN:
 			desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
 			loss_value, grad_value = iterate([X_test_adv,Y_test_adv])
 			X_test_adv -= grad_value*step
+			print "%16.16f"%np.max(grad_value)
 
 		return X_test_adv, Y_test_adv
 
@@ -204,7 +205,8 @@ class CNN:
 			while (Y_test_adv[i]==Y_test[i]).sum() == self.nb_classes:
 				temp = Y_test_adv[i]
 				np.random.shuffle(temp)
-				Y_test_adv[i] = temp
+				Y_test_adv[i] = np.array([[0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]]) 
+				#Y_test_adv[i] = temp
 			
 		return Y_test_adv	
 
