@@ -259,7 +259,10 @@ class CNN:
 
 	def get_stats(self,img,stochastic=False):
 		'''
-		Given an image, get the classfication stats from a trained CNN (both with and without-dropout at test time)
+		argument
+			image
+		return
+			score, pred_label, pred_score, score_mat
 		'''
 		#get the probability vector (output of the trained CNN)
 		img = np.array([img])
@@ -281,7 +284,9 @@ class CNN:
 		
 	@staticmethod
 	def print_report(cnn,img):
-
+		'''
+		print classificatino stats for a image, given a cnn
+		'''
 		#get classification stats from the trained CNN
 		c_score, c_pred_label, c_pred_score, c_score_mat = cnn.get_stats(img,stochastic=False)
 	
@@ -298,7 +303,7 @@ class CNN:
 
 	def gen_adversarial(self,index,dropout=True):
 		'''
-		Generate an adversarial example for the index index in cifar10
+		ScracthPad function: experiment for genrating an adversarial example
 		'''
 
 		labels = K.placeholder(shape=(None,self.nb_classes))
