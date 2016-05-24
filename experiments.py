@@ -146,7 +146,7 @@ def exp5():
 	num_iter = 100000
 	step = 0.01
 	num_samples = 1
-	stochastic = True
+	stochastic = False
 	fpath = 'img_stats/log.txt'
 	
 	'''

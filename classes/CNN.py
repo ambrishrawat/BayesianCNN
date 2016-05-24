@@ -140,6 +140,7 @@ class CNN:
 		
 		#intiliase a dictionary of layers
 		self.ldict = dict([(layer.name, layer) for layer in self.model.layers])
+		#TODO: include iterate and grad here, to save time during compilation
 
 	def save_img(self,img,path='images/img',tag='sample'):
 		'''
@@ -174,7 +175,7 @@ class CNN:
 
 		model_output = self.model.get_output(train=stochastic)
 		model_input = self.model.get_input()
- 
+ 		'''
 		#loss function
 		loss = K.mean(categorical_crossentropy(labels,model_output))
 
@@ -182,16 +183,38 @@ class CNN:
 		grads = K.gradients(loss,model_input)
 		iterate = K.function([model_input,labels], [loss, grads])
 
-		
 		for i in range(0,num_iter+1):
-			desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
+			#desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
 			loss_value, grad_value = iterate([X_test_adv,Y_test_adv])
 			X_test_adv -= grad_value*step
-			print "%16.16f"%np.max(grad_value)
+			print "%16.16f"%np.max(grad_value*(1e6)), 'l2: ', np.linalg.norm(X_test_adv-X_test)
 
 		return X_test_adv, Y_test_adv
+		'''
 
 
+
+
+		'''
+		vanishing gradient investigation
+		'''
+		#gradient of loss with respect to input image
+		#lay_no = is the ith layer input
+		
+		loss = K.mean(categorical_crossentropy(labels,model_output))
+		lay_no = 10
+		layer_i_input = self.model.layers[lay_no].get_input()
+		grads = K.gradients(loss,layer_i_input)
+		iterate = K.function([layer_i_input,labels], [loss, grads])
+		
+		get_layer_i = K.function([model_input],[self.model.layers[lay_no-1].get_output()])	
+		for i in range(0,num_iter+1):
+			#desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
+			loss_value, grad_value = iterate([get_layer_i([X_test_adv])[0],Y_test_adv])
+			#X_test_adv -= grad_value*step
+			print "%16.16f"%np.max(grad_value*(1e6)), 'l2: ', np.linalg.norm(X_test_adv-X_test)
+
+		return X_test_adv, Y_test_adv
 
 
 	def gen_rnd_adv_label(self,Y_test):
