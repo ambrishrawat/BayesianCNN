@@ -1,0 +1,9 @@
+Exp 4
+
+In this experiment, adversarial examples were generated for both the CNN and BayesianCNN. 
+
+
+Observations: 
+
+1. The error curve doesn't seem to asymtotically converge to 1.0
+2. Investigate an image that doesn't get misclassified even after 10,000 iterations
