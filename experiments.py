@@ -205,6 +205,59 @@ def exp5():
 				desired_stats, fpath, step = step, num_iter = num_iter, stochastic = stochastic)
 	pass	
 	
+def exp5():
+	'''
+	Generate a few sample images and visualise their output adversarial image 
+	'''
+	
+	#load model
+	cnn = CNN()
+	cnn.set_data()
+	cnn.load_model()
+	
+
+	#hyperparamerters
+	num_iter = 100000
+	step = 0.01
+	num_samples = 1
+	stochastic = False
+	fpath = 'img_stats/log.txt'
+
+	#stats file
+	f = open(fpath,'w')
+	f.write('num_samples: '+ str(num_samples) + '\n'\
+		+ 'step: ' + str(0.01) + '\n'\
+		+ 'stochastic: ' + str(False) + '\n')
+	
+	f.write('image file,iteration,original label, intended adv label, cnn_pred_label, bcnn_adv_label, pred_cnn_score, pred_bcnn_score, rms\n')
+	f.close()
+	#stats function
+	def desired_stats(cnn_m,fp, X_test, Y_test, X_test_adv, Y_test_adv, i):
+		if i%1000==0:
+			print 'Iteration ', i
+		if i in [0, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]:		
+			#take every image in the X_test_adv and classify it. 
+			#Save the label in the log and save the image
+			for j in range(X_test.shape[0]):
+				_, pred_cnn_label, pred_cnn_score, _ = cnn.get_stats(X_test_adv[j],stochastic=False)
+				_, pred_bcnn_label, pred_bcnn_score, _ = cnn.get_stats(X_test_adv[j],stochastic=True)
+				orig_label,_ = max(enumerate(Y_test[j]),key=operator.itemgetter(1))
+				int_adv_label, _ = max(enumerate(Y_test_adv[j]),key=operator.itemgetter(1))
+				f = open(fp,'a')
+				rms = float(np.linalg.norm(X_test_adv[j]-X_test[j]))
+				f.write('img_'+str(j)+'_'+str(i)+','\
+					+cnn.labels[orig_label] + ','+ cnn.labels[int_adv_label] + ',' \
+					+cnn.labels[pred_cnn_label] + ',' + cnn.labels[pred_bcnn_label] + ',' \
+					+str(pred_cnn_score) + ',' + str(pred_bcnn_score) + ','+ str(rms)+'\n')
+				f.close()
+
+				cnn.save_img(X_test[j], path='img_stats/img_'+str(j), tag = str(i))
+		pass
+
+	#generate random adversarial labels and the corresponding adversarial images for the data set	
+	X_test_adv, Y_test_adv = cnn.get_rnd_adv_img(cnn.X_test[1:num_samples+1],cnn.Y_test[1:num_samples+1], \
+				desired_stats, fpath, step = step, num_iter = num_iter, stochastic = stochastic)
+	pass	
 	
 if __name__ == "__main__":
 	

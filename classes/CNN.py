@@ -203,16 +203,18 @@ class CNN:
 		
 		loss = K.mean(categorical_crossentropy(labels,model_output))
 		lay_no = 10
-		layer_i_input = self.model.layers[lay_no].get_input()
+		layer_i_input = self.ldict['dense_1'].get_input()
 		grads = K.gradients(loss,layer_i_input)
 		iterate = K.function([layer_i_input,labels], [loss, grads])
 		
-		get_layer_i = K.function([model_input],[self.model.layers[lay_no-1].get_output()])	
-		for i in range(0,num_iter+1):
+		get_layer_i = K.function([model_input],[layer_i_input])	
+		for i in range(0,20):
 			#desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
-			loss_value, grad_value = iterate([get_layer_i([X_test_adv])[0],Y_test_adv])
+			linput = get_layer_i([X_test_adv])[0]
+			loss_value, grad_value = iterate([linput,Y_test_adv])
+			print np.linalg.norm(linput[0])
 			#X_test_adv -= grad_value*step
-			print "%16.16f"%np.max(grad_value*(1e6)), 'l2: ', np.linalg.norm(X_test_adv-X_test)
+			print "%16.16f"%np.max(grad_value*(1)), 'l2: ', np.linalg.norm(X_test_adv-X_test)
 
 		return X_test_adv, Y_test_adv
 
@@ -228,6 +230,7 @@ class CNN:
 			while (Y_test_adv[i]==Y_test[i]).sum() == self.nb_classes:
 				temp = Y_test_adv[i]
 				np.random.shuffle(temp)
+				#TODO: remove the line (only for vanishing gradient experiment)
 				Y_test_adv[i] = np.array([[0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]]) 
 				#Y_test_adv[i] = temp
 			

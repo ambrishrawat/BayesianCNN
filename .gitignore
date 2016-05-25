@@ -6,10 +6,9 @@
 # Don't ignore models
 !models/
 !models/*
-!img_stats/
-!img_stats/*
-!stats/
-!stats/*
+!exp/
+!exp/*
+!exp/*/*
 # Don't ignore .gitignore
 !.gitignore
 
