@@ -205,23 +205,24 @@ def exp5():
 				desired_stats, fpath, step = step, num_iter = num_iter, stochastic = stochastic)
 	pass	
 	
-def exp5():
+def exp6():
 	'''
-	Generate a few sample images and visualise their output adversarial image 
+	Zero Gradient investigation
 	'''
 	
 	#load model
 	cnn = CNN()
 	cnn.set_data()
 	cnn.load_model()
-	
 
+	
 	#hyperparamerters
-	num_iter = 100000
+	num_iter = 20
 	step = 0.01
 	num_samples = 1
 	stochastic = False
 	fpath = 'img_stats/log.txt'
+
 
 	#stats file
 	f = open(fpath,'w')

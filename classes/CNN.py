@@ -14,6 +14,21 @@ import scipy as sp
 from keras import backend as K 
 import operator
 
+class LocalHistory(keras.callbacks.Callback):
+	'''
+	Callback for test-error at every epoch
+	'''
+	def on_epoch_begin(self, epoch, logs={}):
+		
+		pass
+	def on_epoch_end(self, epoch, logs={}):
+		if epoch%20==0:
+			
+			pass
+		else:
+			pass
+		pass
+
 class CNN:
 	'''
 	CNN Class
@@ -21,6 +36,11 @@ class CNN:
 	def __init__(self):
 		#TODO
 		#Initialise all the class members here (including numpy arrays?)
+		#self.X_train = np.array()
+		#self.Y_train = np.array()
+		#self.X_test = np.array()
+		#self.Y_test = np.array()
+		
 		pass
 
 	def set_data(self):
@@ -58,47 +78,47 @@ class CNN:
 
 		#Layer 1 - Convolution2D - 32 filters of size 3x3ximg_channels, Output neuron volume size - 32x32x32
 		self.model.add(Convolution2D(32, 3, 3, border_mode='same',\
-			input_shape=(img_channels, img_rows, img_cols),name='conv1_1'))	
+			input_shape=(img_channels, img_rows, img_cols),name='conv1'))	
 		#Layer 1- ReLU activation 
-		self.model.add(Activation('relu'))
+		self.model.add(Activation('relu'),name='relu1')
 
 		#Layer 2 - Convolution2D - 32 filters of size 3x3x32 (32 from the 'depth' of previous Convolution2D Layer)
 		#				Output neuron volume size - 32x32x32
-		self.model.add(Convolution2D(32, 3, 3,name='conv1_2'))
+		self.model.add(Convolution2D(32, 3, 3,name='conv2'))
 		#Layer 2 - ReLU activation
-		self.model.add(Activation('relu'))
+		self.model.add(Activation('relu'),name='relu2')
 
 		#Layer 3 - Pooling Layer (stride = 2, extend 2x2, 75% rejection?) Output neuron volume size - 16x16x32		
-		self.model.add(MaxPooling2D(pool_size=(2, 2)))
+		self.model.add(MaxPooling2D(pool_size=(2, 2)),name='pool1')
 		self.model.add(Dropout(0.25))
 		
 		#Layer 4 - Convolution2D - 64 filters of size 3x3x32 (32 from the 'depth' of previous Convolution2D Layer)
 		#				Output neuron volume size - 16x16x64
-		self.model.add(Convolution2D(64, 3, 3, border_mode='same',name='conv2_1'))
+		self.model.add(Convolution2D(64, 3, 3, border_mode='same',name='conv3'))
 		#Layer 4 - ReLU activation
-		self.model.add(Activation('relu'))
+		self.model.add(Activation('relu'),name='relu3')
 
 		#Layer 5 - Convolution2D - 64 filters of size 3x3x64 (64 from the 'depth' of previous Convolution2D Layer)
 		#				Output neuron volume size - 16x16x64
-		self.model.add(Convolution2D(64, 3, 3,name='conv2_2'))
+		self.model.add(Convolution2D(64, 3, 3,name='conv4'))
 		#Layer 5 - ReLU activation
-		self.model.add(Activation('relu'))
+		self.model.add(Activation('relu'),name='relu4')
 
 		#Layer 6 - Pooling Layer (stride = 2, extend 2x2, 75% rejection?) Output neuron volume size - 8x8x64		
-		self.model.add(MaxPooling2D(pool_size=(2, 2)))
+		self.model.add(MaxPooling2D(pool_size=(2, 2)),name='pool')
 		self.model.add(Dropout(0.25))
 
 		self.model.add(Flatten())
 		#Layer 7 - Fully connected layer
-		self.model.add(Dense(512,name='dense_1'))
+		self.model.add(Dense(512,name='full1'))
 		#Layer 7 - ReLU activation
-		self.model.add(Activation('relu'))
+		self.model.add(Activation('relu'),name='relu5')
 		self.model.add(Dropout(0.5))
 
 		#Layer 8 - Fully connected layer
-		self.model.add(Dense(self.nb_classes,name='dense_2'))
+		self.model.add(Dense(self.nb_classes,name='dense2'))
 		#Layer 8 - softmax activation
-		self.model.add(Activation('softmax'))
+		self.model.add(Activation('softmax'),name='softmax1')
 
 		#intiliase a dictionary of layers
 		self.ldict = dict([(layer.name, layer) for layer in self.model.layers])
