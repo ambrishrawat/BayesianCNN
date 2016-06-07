@@ -1,0 +1,8 @@
+num_samples: 1
+step: 0.01
+stochastic: False
+image file,iteration,original label, intended adv label, cnn_pred_label, bcnn_adv_label, pred_cnn_score, pred_bcnn_score, rms
+img_0_0,ship,automobile,ship,ship,0.999969005585,0.978801189875,0.0
+img_0_20,ship,automobile,automobile,automobile,0.999697208405,0.845171401578,0.984474658966
+img_0_50,ship,automobile,automobile,automobile,0.999861001968,0.851673171985,0.985570371151
+img_0_100,ship,automobile,automobile,automobile,0.999929070473,0.852590657455,0.986560881138

@@ -147,7 +147,7 @@ def exp5():
 	step = 0.01
 	num_samples = 1
 	stochastic = False
-	fpath = 'img_stats/log.txt'
+	fpath = 'exp/exp8/log2.txt'
 	
 	'''
 	#10 images belonging to 10 classes and save them
@@ -197,7 +197,7 @@ def exp5():
 					+str(pred_cnn_score) + ',' + str(pred_bcnn_score) + ','+ str(rms)+'\n')
 				f.close()
 
-				cnn.save_img(X_test[j], path='img_stats/img_'+str(j), tag = str(i))
+				cnn.save_img(X_test[j]-X_test_adv[j], path='exp/exp8/gradimg_'+str(j), tag = str(i))
 		pass
 
 	#generate random adversarial labels and the corresponding adversarial images for the data set	
@@ -259,10 +259,19 @@ def exp6():
 	X_test_adv, Y_test_adv = cnn.get_rnd_adv_img(cnn.X_test[1:num_samples+1],cnn.Y_test[1:num_samples+1], \
 				desired_stats, fpath, step = step, num_iter = num_iter, stochastic = stochastic)
 	pass	
+
+def exp7():
+	'''
+	Retrain model. Save errors after every epoch
+	'''
+
+	#load model
+	cnn = CNN()
+	cnn.set_data()
+	cnn.set_model_arch()
+	cnn.train_model(save_path_key = "models/model_cifar_2_adam")
+	
 	
 if __name__ == "__main__":
-	
-	#exp1()
-	#exp2()
-	#exp4()
 	exp5()
+	pass
