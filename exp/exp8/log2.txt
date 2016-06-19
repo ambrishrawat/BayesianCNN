@@ -6,3 +6,6 @@ img_0_0,ship,automobile,ship,ship,0.999969005585,0.978801189875,0.0
 img_0_20,ship,automobile,automobile,automobile,0.999697208405,0.845171401578,0.984474658966
 img_0_50,ship,automobile,automobile,automobile,0.999861001968,0.851673171985,0.985570371151
 img_0_100,ship,automobile,automobile,automobile,0.999929070473,0.852590657455,0.986560881138
+img_0_200,ship,automobile,automobile,automobile,0.999964952469,0.871773401189,0.987625479698
+img_0_500,ship,automobile,automobile,automobile,0.999985933304,0.864319261064,0.989073634148
+img_0_1000,ship,automobile,automobile,automobile,0.999992728233,0.922691533455,0.990217328072

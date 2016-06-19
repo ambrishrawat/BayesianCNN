@@ -385,6 +385,11 @@ class CNN:
 		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
 		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape
 
+	def noise_exp(self):
+		'''
+		Generate adversarial examples for noisy images
+		'''
+
 	def gen_adversarial(self,index,dropout=True):
 		'''
 		ScracthPad function: experiment for genrating an adversarial example
