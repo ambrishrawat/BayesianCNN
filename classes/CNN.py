@@ -133,7 +133,7 @@ class CNN:
 		'''
 
 		#Bookwork
-		batch_size = 32
+		batch_size = 64
 		nb_classes = 10
 		nb_epoch = 420
 		data_augmentation = False
@@ -209,6 +209,36 @@ class CNN:
 		'''
 		sp.misc.imsave(path+'_'+tag+'.jpg',np.rot90(img.T,k=3))
 
+
+	def noise_adv_exp(self, noise_img, noise_adv, desired_stats, fp, step = 0.01, num_iter = 1000, stochastic = False):
+
+		'''
+		Compute errors - 
+		'''
+		noise_img = np.array(noise_img)
+		noise_img_adv = noise_img.copy()
+
+		labels = K.placeholder(shape=(noise_adv.shape[0],self.nb_classes))
+
+		model_output = self.model.get_output(train=stochastic)
+		model_input = self.model.get_input()
+ 		
+		#loss function
+		loss = K.mean(categorical_crossentropy(labels,model_output))
+
+		#gradient of loss with respect to input image
+		grads = K.gradients(loss,model_input)
+		iterate = K.function([model_input,labels], [loss, grads])
+
+		for i in range(0,num_iter+1):
+			desired_stats(self,fp, noise_img, noise_img_adv, noise_adv, i)			
+			loss_value, grad_value = iterate([noise_img_adv,noise_adv])
+			noise_img_adv -= grad_value*step
+			print "%16.16f"%np.max(grad_value*(1e6)), 'l2: ', np.linalg.norm(noise_img_adv-noise_img)
+
+		return noise_img_adv
+
+		pass
 
 	def get_rnd_adv_img(self,X_test,Y_test, desired_stats, fp, step = 0.01, num_iter = 1000, stochastic = False):
 
@@ -332,7 +362,11 @@ class CNN:
 		score = np.mean(score_mat,axis=0)
 		pred_labels = np.zeros(num_img)
 		correct_labels = np.zeros(num_img)
+
 		#TODO: use list comprehension?
+
+		#TODO: change decision rule
+
 		for i in range(num_img):
 			correct_labels[i],_ = max(enumerate(test_labels[i]),key=operator.itemgetter(1))
 			pred_labels[i],_ = max(enumerate(score[i]),key=operator.itemgetter(1))
@@ -385,10 +419,50 @@ class CNN:
 		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
 		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape
 
-	def noise_exp(self):
+	def noise_exp(self,num_images=1000):		
 		'''
-		Generate adversarial examples for noisy images
+		Generate a set of noisy images along with their adversarial labels
+		Adverial example for Noisy image
 		'''
+	
+		'''	
+		bookwork
+		'''
+		num_classes = self.nb_classes
+
+		def gen_noise(row=32,col=32,ch=3,mean=0.0,var=0.1):
+			sigma = var**0.5
+			gauss = np.random.normal(mean,sigma,(row,col,ch))
+			gauss = gauss.reshape(ch,row,col)
+			return gauss
+
+		#generate random 100 noisy images, along with their adverarial labels
+		gauss = gen_noise()
+		noise_test = np.array([gauss])
+	
+		for _ in range(0,num_images-1):
+			gauss = gen_noise()
+			noise_test = np.row_stack((noise_test,[gauss]))
+	
+		#labels 
+		labels =  np.random.randint(low=1, high=num_classes,  size=(num_images, 1))
+		temp = np.zeros((10,),dtype=np.int)
+		temp[labels[0]-1] = 1
+		noise_labels = np.array([temp])
+
+		for i in range(1,num_images):
+			temp = np.zeros((10,),dtype=np.int)
+			temp[labels[i]-1] = 1
+			noise_labels = np.row_stack((noise_labels,[temp]))
+		
+	
+		#generate the corresponding adversarial images
+		print 'noisy images ', noise_test.shape
+		print 'noise_labels ', noise_labels.shape
+		print 'X_test ', self.X_test.shape
+		print 'Y_test ', self.Y_test.shape
+
+		return noise_test, noise_labels	
 
 	def gen_adversarial(self,index,dropout=True):
 		'''

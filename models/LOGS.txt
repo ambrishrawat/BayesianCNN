@@ -1,0 +1,23 @@
+Date: 25th June 2016
+
+Model File name: cifar_10_sgd_25612_1
+Weights file name: cifar_10_sgd_25612_1 
+
+Trainining CIFAR-10 mode
+Train, Validation, Test - [0:40000], [40000:50000], [0:10000]
+
+Parameters
+	Batch Size: 32
+	Epochs: 200
+	Data_augumentation: False
+
+Optimisation: 
+	SGD
+	Learning Rate : 0.01
+	Decay = 1e-6
+	Momentum=0.9
+	nrestov=True
+
+Decision Rule for classification: argmax
+
+ 
