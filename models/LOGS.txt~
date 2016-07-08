@@ -1,0 +1,80 @@
+
+Date: 28th June 2016
+
+-------------------------------------------------------------------------------
+
+Date: 26th June 2016
+
+Model File name: cifar_10_sgd_26612_1
+Weights file name: cifar_10_sgd_26612_1 
+
+Trainining CIFAR-10 mode
+Train, Validation, Test - [0:40000], [40000:50000], [0:10000]
+
+Parameters
+	Batch Size: 32
+	Epochs: 200
+	Data_augumentation: False
+
+Optimisation: 
+	SGD
+	Learning Rate : 0.01
+	Decay = 1e-6
+	Momentum=0.9
+	nrestov=True
+
+Decision Rule for classification: argmax
+
+-------------------------------------------------------------------------------
+
+Date: 26th June 2016
+
+Model File name: cifar_10_rmsprop_26612_1
+Weights file name: cifar_10_rmsprop_26612_1
+
+Trainining CIFAR-10 mode
+Train, Validation, Test - [0:40000], [40000:50000], [0:10000]
+
+Parameters
+        Batch Size: 32
+        Epochs: 420
+        Data_augumentation: False
+
+Optimisation: 
+        RMSprop
+        Learning Rate : 0.001
+        rho = 0.9
+	epsilon = 1e-8
+        
+
+Decision Rule for classification: argmax
+
+-------------------------------------------------------------------------------
+
+Date: 26th June 2016
+
+Model File name: cifar_10_adadelta_26612_1
+Weights file name: cifar_10_adadelta_26612_1 
+
+Trainining CIFAR-10 mode
+Train, Validation, Test - [0:40000], [40000:50000], [0:10000]
+
+Parameters
+        Batch Size: 32
+        Epochs: 420
+        Data_augumentation: False
+
+Optimisation: 
+        RMSprop
+        Learning Rate : 0.001
+        rho = 0.9
+        epsilon = 1e-8
+        
+
+Decision Rule for classification: argmax
+ 
+-------------------------------------------------------------------------------
+
+
+
+

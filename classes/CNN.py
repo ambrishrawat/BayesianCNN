@@ -126,22 +126,22 @@ class CNN:
 		pass
 
 
-	def train_model(self,save_path_key = "models/model_cifar"):
+	def train_model(self, options, opti_algo, save_path_key = "models/model_cifar"):
 		'''
 		Train the model using Stochastic Gradient Descent
 	 	(SGD + momentum (how original)).
 		'''
 
 		#Bookwork
-		batch_size = 64
+		batch_size = options['batch_size']
 		nb_classes = 10
-		nb_epoch = 420
-		data_augmentation = False
+		nb_epoch = options['epoch']
+		data_augmentation = options['data_augmentation']
 
 
-		sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9)
+		#sgd = SGD(lr=opti_param['lr'], decay=opti_param['decay'], momentum=opti_param['momentum'])
 		#sgd = Adam(lr=0.01)
-		self.model.compile(loss='categorical_crossentropy', optimizer=sgd)
+		#self.model.compile(loss='categorical_crossentropy', optimizer=sgd)
 		#self.model.fit(self.X_train, self.Y_train, batch_size=batch_size, nb_epoch=nb_epoch)
 		#json_string = self.model.to_json()
 		#open(save_path_key+'_arch.json', 'w').write(json_string)
@@ -172,14 +172,17 @@ class CNN:
 		print 'X_test.shape', self.X_test.shape
 		print 'X_test.shape', self.Y_test.shape 
 
-		f = open('training_sgd_2.stats','w')
+		f = open(save_path_key+'.stats','w')
 		f.write('epoch,training_error,validation_error,test_error\n')
 		epoch_num = 0
 		while epoch_num <= nb_epoch:
+			
+			self.model.compile(loss='categorical_crossentropy', optimizer=opti_algo)
 			self.model.fit(self.X_training, self.Y_training, batch_size=batch_size, nb_epoch=20)
-			training_err = self.compute_test_error(test_images=self.X_training,test_labels=self.Y_training,dropout = False)
-			validation_err = self.compute_test_error(test_images=self.X_validation,test_labels=self.Y_validation,dropout = False)
-			test_err = self.compute_test_error(test_images=self.X_test,test_labels=self.Y_test,dropout = False)
+			#def compute_test_error_thresh(self,test_images,test_labels,thresh = 0.5, dropout = False, numiter = 1000):
+			training_err = self.compute_test_error_thresh(test_images=self.X_training,test_labels=self.Y_training,thresh=0.0,dropout = False)
+			validation_err = self.compute_test_error_thresh(test_images=self.X_validation,test_labels=self.Y_validation,thresh=0.0,dropout = False)
+			test_err = self.compute_test_error_thresh(test_images=self.X_test,test_labels=self.Y_test,thresh=0.0,dropout = False)
 			epoch_num = epoch_num + 20
 			print 'epoch_num: ', epoch_num
 			f.write(str(epoch_num)+','+str(training_err)+','+str(validation_err)+','+str(test_err)+'\n')
@@ -188,13 +191,13 @@ class CNN:
 		self.model.save_weights(save_path_key+'_weights.h5')
 	
 
-	def load_model(self):
+	def load_model(self, tag = 'models/model_cifar'):
 		'''
 		Load model architecture from a jason file and the corresponding weights from another file
 		'''
 	  	self.model = Sequential()
-		self.model = model_from_json(open('models/model_cifar_arch.json').read())
-		self.model.load_weights('models/model_cifar_weights.h5')
+		self.model = model_from_json(open(tag+'_arch.json').read())
+		self.model.load_weights(tag+'_weights.h5')
 
 		sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 		self.model.compile(loss='categorical_crossentropy', optimizer=sgd) 
@@ -285,32 +288,6 @@ class CNN:
 
 
 
-
-		'''
-		vanishing gradient investigation
-		
-		#gradient of loss with respect to input image
-		#lay_no = is the ith layer input
-		
-		loss = K.mean(categorical_crossentropy(labels,model_output))
-		lay_no = 10
-		layer_i_input = self.ldict['dense_1'].get_input()
-		grads = K.gradients(loss,layer_i_input)
-		iterate = K.function([layer_i_input,labels], [loss, grads])
-		
-		get_layer_i = K.function([model_input],[layer_i_input])	
-		for i in range(0,num_iter):
-			#TODO: change 20 to num_iter
-			desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
-			linput = get_layer_i([X_test_adv])[0]
-			loss_value, grad_value = iterate([linput,Y_test_adv])
-			print np.linalg.norm(linput[0])
-			X_test_adv -= grad_value*step
-			print "%16.16f"%np.max(grad_value*(1)), 'l2: ', np.linalg.norm(X_test_adv-X_test)
-
-		return X_test_adv, Y_test_adv
-		'''
-
 	def gen_rnd_adv_label(self,Y_test):
 		'''
 		Shuffle the labels of the Y_test to get a Y_test_labels
@@ -342,38 +319,77 @@ class CNN:
 		orig_label,_ = max(enumerate(orig_label_array),key=operator.itemgetter(1))
 		return img, orig_label
 
-	def compute_test_error(self,test_images,test_labels,dropout = False):
+	def compute_test_error_thresh(self,test_images,test_labels,thresh = 0.5, dropout = False, numiter = 1000):
 		'''
-		Test set evaluation (with argmax instead of threshold)
+		Test set evaluation 
+		Thresh = 0.0 implies argmax
+		Assumes that test label have a binary representation
 		'''
 		num_img = test_images.shape[0]
-		#print 'Number of images in the test set: ', num_img
+
 		score_mat = []
 		if dropout==False:
 			score = self.model.predict(test_images)
 			#print 'score (shape): ', score.shape
 			score_mat.append(score)
 		else:
-			for i in range(1,100):
+			for i in range(1,numiter):
 				score = self.model.predict_stochastic(test_images)
 				score_mat.append(score)
 		score_mat = np.array(score_mat)
 		#print 'score_mat (shape): ', score_mat.shape
 		score = np.mean(score_mat,axis=0)
 		pred_labels = np.zeros(num_img)
+		pred_prob = np.zeros(num_img)
 		correct_labels = np.zeros(num_img)
 
 		#TODO: use list comprehension?
 
-		#TODO: change decision rule
+		total_correct = 0
 
 		for i in range(num_img):
 			correct_labels[i],_ = max(enumerate(test_labels[i]),key=operator.itemgetter(1))
-			pred_labels[i],_ = max(enumerate(score[i]),key=operator.itemgetter(1))
-			
-		total_correct = (correct_labels == pred_labels).sum()
+			pred_labels[i],pred_prob[i] = max(enumerate(score[i]),key=operator.itemgetter(1))
+			if pred_prob[i] >= thresh and (correct_labels[i] == pred_labels[i]):
+				total_correct = total_correct + 1
 		error = float(num_img - total_correct)/float(num_img)
 		return error
+
+
+	def class_conditional_stats(self,test_images,test_labels,thresh = 0.5, dropout = False, numiter = 1000):
+		'''
+		Compute class conditional stats
+		'''
+		num_img = test_images.shape[0]
+
+		score_mat = []
+		if dropout==False:
+			score = self.model.predict(test_images)
+			#print 'score (shape): ', score.shape
+			score_mat.append(score)
+		else:
+			for i in range(1,numiter):
+				score = self.model.predict_stochastic(test_images)
+				score_mat.append(score)
+		score_mat = np.array(score_mat)
+		#print 'score_mat (shape): ', score_mat.shape
+		score = np.mean(score_mat,axis=0)
+		score_var = np.var(score_mat,axis=0)
+
+		class_pred_prob = np.zeros(num_img)
+		class_pred_var = np.zeros(num_img)
+
+		labels = np.zeros(num_img)
+
+		#TODO: use list comprehension?
+
+		total_correct = 0
+
+		for i in range(num_img):
+			labels[i],_ = max(enumerate(test_labels[i]),key=operator.itemgetter(1))
+			class_pred_prob[i] = score[i][labels[i]]
+			class_pred_var[i] = score_var[i][labels[i]]
+
 
 	def get_stats(self,img,stochastic=False):
 		'''
@@ -464,67 +480,4 @@ class CNN:
 
 		return noise_test, noise_labels	
 
-	def gen_adversarial(self,index,dropout=True):
-		'''
-		ScracthPad function: experiment for genrating an adversarial example
-		'''
-
-		labels = K.placeholder(shape=(None,self.nb_classes))
-
-		#preds = self.ldict['dense_2'].get_output(train=dropout)
-		preds = self.model.get_output(train=dropout)
-		img_placeholder = self.model.get_input()
- 
-		#loss function
-		loss = K.mean(categorical_crossentropy(labels,preds))
-
-		#gradient of loss with respect to input image
-		grads = K.gradients(loss,img_placeholder)
-		iterate = K.function([img_placeholder,labels], [loss, grads])
-
-
-		img_orig = [self.X_test[index]] #(1,3,32,32) instead of (3,32,32) 
-		orig_label = self.Y_test[index]
-		img_adv = [self.X_test[index]] #(1,3,32,32) instead of (3,32,32)
-		temp_label = np.array([[0., 0., 0., 0., 1., 0., 0., 0., 0., 0.]]) 
-		step = 0.001
-		for i in range(100):
-			loss_value, grads_value = iterate([img_adv,temp_label])
-			img_adv -= grads_value*step
-			#print grads_value
-		
-		print 'Index: ', index, ' Correct label: ', orig_label	
-		sp.misc.imsave('images/img.jpg',img_orig[0].T)
-		sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
-
-
-		#get classification stats from the trained CNN
-		c_score, c_pred_label, c_pred_score, c_score_mat = self.get_stats(img_orig,stochastic=False)
 	
-		#get classification stats from the trained Bayesian CNN 
-		bc_score, bc_pred_label, bc_pred_score, bc_score_mat = self.get_stats(img_orig,stochastic=True)
-
-		#print report
-		print 'Traditional CNN'
-		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
-		print 'Shape (mat): ', c_score_mat.shape, ' Shape (vec): ', c_score.shape, ' Sum (vec): ', np.sum(c_score)
-		print 'Bayesian CNN'		
-		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
-		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape, ' Sum (vec): ', np.sum(bc_score)
-
-
-		#get classification stats from the trained CNN
-		c_score, c_pred_label, c_pred_score, c_score_mat = self.get_stats(img_adv,stochastic=False)
-	
-		#get classification stats from the trained Bayesian CNN 
-		bc_score, bc_pred_label, bc_pred_score, bc_score_mat = self.get_stats(img_adv,stochastic=True)
-
-		#print report
-		print 'Traditional CNN'
-		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
-		print 'Shape (mat): ', c_score_mat.shape, ' Shape (vec): ', c_score.shape, ' Sum (vec): ', np.sum(c_score)	
-		print 'Bayesian CNN'		
-		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
-		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape, ' Sum (vec): ', np.sum(bc_score)
-	
-		

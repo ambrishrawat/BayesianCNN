@@ -246,3 +246,130 @@ def exp5():
 				desired_stats, fpath, step = step, num_iter = num_iter, stochastic = stochastic)
 	pass	
 
+#------------------------------------------------
+'''
+CNN.py codedump.py
+'''
+#------------------------------------------------
+	def gen_adversarial(self,index,dropout=True):
+		'''
+		ScracthPad function: experiment for genrating an adversarial example
+		'''
+
+		labels = K.placeholder(shape=(None,self.nb_classes))
+
+		#preds = self.ldict['dense_2'].get_output(train=dropout)
+		preds = self.model.get_output(train=dropout)
+		img_placeholder = self.model.get_input()
+ 
+		#loss function
+		loss = K.mean(categorical_crossentropy(labels,preds))
+
+		#gradient of loss with respect to input image
+		grads = K.gradients(loss,img_placeholder)
+		iterate = K.function([img_placeholder,labels], [loss, grads])
+
+
+		img_orig = [self.X_test[index]] #(1,3,32,32) instead of (3,32,32) 
+		orig_label = self.Y_test[index]
+		img_adv = [self.X_test[index]] #(1,3,32,32) instead of (3,32,32)
+		temp_label = np.array([[0., 0., 0., 0., 1., 0., 0., 0., 0., 0.]]) 
+		step = 0.001
+		for i in range(100):
+			loss_value, grads_value = iterate([img_adv,temp_label])
+			img_adv -= grads_value*step
+			#print grads_value
+		
+		print 'Index: ', index, ' Correct label: ', orig_label	
+		sp.misc.imsave('images/img.jpg',img_orig[0].T)
+		sp.misc.imsave('images/img_adv.jpg',img_adv[0].T)
+
+
+		#get classification stats from the trained CNN
+		c_score, c_pred_label, c_pred_score, c_score_mat = self.get_stats(img_orig,stochastic=False)
+	
+		#get classification stats from the trained Bayesian CNN 
+		bc_score, bc_pred_label, bc_pred_score, bc_score_mat = self.get_stats(img_orig,stochastic=True)
+
+		#print report
+		print 'Traditional CNN'
+		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
+		print 'Shape (mat): ', c_score_mat.shape, ' Shape (vec): ', c_score.shape, ' Sum (vec): ', np.sum(c_score)
+		print 'Bayesian CNN'		
+		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
+		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape, ' Sum (vec): ', np.sum(bc_score)
+
+
+		#get classification stats from the trained CNN
+		c_score, c_pred_label, c_pred_score, c_score_mat = self.get_stats(img_adv,stochastic=False)
+	
+		#get classification stats from the trained Bayesian CNN 
+		bc_score, bc_pred_label, bc_pred_score, bc_score_mat = self.get_stats(img_adv,stochastic=True)
+
+		#print report
+		print 'Traditional CNN'
+		print 'Predicted label: ', c_pred_label, ' probability: ', c_pred_score
+		print 'Shape (mat): ', c_score_mat.shape, ' Shape (vec): ', c_score.shape, ' Sum (vec): ', np.sum(c_score)	
+		print 'Bayesian CNN'		
+		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
+		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape, ' Sum (vec): ', np.sum(bc_score)
+	
+		
+
+		'''
+		vanishing gradient investigation
+		
+		#gradient of loss with respect to input image
+		#lay_no = is the ith layer input
+		
+		loss = K.mean(categorical_crossentropy(labels,model_output))
+		lay_no = 10
+		layer_i_input = self.ldict['dense_1'].get_input()
+		grads = K.gradients(loss,layer_i_input)
+		iterate = K.function([layer_i_input,labels], [loss, grads])
+		
+		get_layer_i = K.function([model_input],[layer_i_input])	
+		for i in range(0,num_iter):
+			#TODO: change 20 to num_iter
+			desired_stats(self,fp, X_test, Y_test, X_test_adv, Y_test_adv, i)			
+			linput = get_layer_i([X_test_adv])[0]
+			loss_value, grad_value = iterate([linput,Y_test_adv])
+			print np.linalg.norm(linput[0])
+			X_test_adv -= grad_value*step
+			print "%16.16f"%np.max(grad_value*(1)), 'l2: ', np.linalg.norm(X_test_adv-X_test)
+
+		return X_test_adv, Y_test_adv
+		'''
+
+	def compute_test_error(self,test_images,test_labels,dropout = False):
+		'''
+		Test set evaluation (with argmax instead of threshold)
+		'''
+		num_img = test_images.shape[0]
+		#print 'Number of images in the test set: ', num_img
+		score_mat = []
+		if dropout==False:
+			score = self.model.predict(test_images)
+			#print 'score (shape): ', score.shape
+			score_mat.append(score)
+		else:
+			for i in range(1,100):
+				score = self.model.predict_stochastic(test_images)
+				score_mat.append(score)
+		score_mat = np.array(score_mat)
+		#print 'score_mat (shape): ', score_mat.shape
+		score = np.mean(score_mat,axis=0)
+		pred_labels = np.zeros(num_img)
+		correct_labels = np.zeros(num_img)
+
+		#TODO: use list comprehension?
+
+		#TODO: change decision rule
+
+		for i in range(num_img):
+			correct_labels[i],_ = max(enumerate(test_labels[i]),key=operator.itemgetter(1))
+			pred_labels[i],_ = max(enumerate(score[i]),key=operator.itemgetter(1))
+			
+		total_correct = (correct_labels == pred_labels).sum()
+		error = float(num_img - total_correct)/float(num_img)
+		return error
