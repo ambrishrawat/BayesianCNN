@@ -356,7 +356,8 @@ class CNN:
 		return error
 
 
-	def class_conditional_stats(self,test_images,test_labels,thresh = 0.5, dropout = False, numiter = 1000):
+
+	def class_conditional_stats(self,test_images,test_labels, dropout = False, numiter = 1000, ret_mean = True):
 		'''
 		Compute class conditional stats
 		'''
@@ -389,7 +390,10 @@ class CNN:
 			labels[i],_ = max(enumerate(test_labels[i]),key=operator.itemgetter(1))
 			class_pred_prob[i] = score[i][labels[i]]
 			class_pred_var[i] = score_var[i][labels[i]]
-
+		if ret_mean == True:
+			return np.mean(class_pred_prob, axis = 0), np.mean(class_pred_var, axis = 0)
+		else:
+			return class_pred_prob, class_pred_var			
 
 	def get_stats(self,img,stochastic=False):
 		'''
@@ -435,7 +439,7 @@ class CNN:
 		print 'Predicted label: ', bc_pred_label, ' probability: ', bc_pred_score
 		print 'Shape (mat): ', bc_score_mat.shape, ' Shape (vec): ', bc_score.shape
 
-	def noise_exp(self,num_images=1000):		
+	def noise_exp(self,num_images=1000, options = {'random':False, 'fixed_label':5}):		
 		'''
 		Generate a set of noisy images along with their adversarial labels
 		Adverial example for Noisy image
@@ -464,11 +468,16 @@ class CNN:
 		labels =  np.random.randint(low=1, high=num_classes,  size=(num_images, 1))
 		temp = np.zeros((10,),dtype=np.int)
 		temp[labels[0]-1] = 1
+		if options['random'] == False:
+			temp[options['fixed_label']-1] = 1		
 		noise_labels = np.array([temp])
 
 		for i in range(1,num_images):
 			temp = np.zeros((10,),dtype=np.int)
+			labels =  np.random.randint(low=1, high=num_classes,  size=(num_images, 1))
 			temp[labels[i]-1] = 1
+			if options['random'] == False:
+				temp[options['fixed_label']-1] = 1
 			noise_labels = np.row_stack((noise_labels,[temp]))
 		
 	
